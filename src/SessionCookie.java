@@ -30,7 +30,7 @@ public class SessionCookie {
         lastTimeStamp = System.currentTimeMillis();
 
     }
-    
+
     public boolean hasTimedOut() {
         if (System.currentTimeMillis() - lastTimeStamp > timeoutLength * 1000) {
             return true;
