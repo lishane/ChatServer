@@ -9,5 +9,8 @@ public class TestClass {
         System.out.println(c.addStamp("hello"));
         System.out.println(c.addStamp("hello"));
 
+        User[] u = new User[0];
+        ChatServer cs = new ChatServer(u, 10);
+        System.out.println(cs.parseRequest("This\tis\r\n"));
     }
 }

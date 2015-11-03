@@ -12,6 +12,17 @@ public class CircularBuffer {
         counter = 0;
     }
 
+    public String[] getNewest(int numMessages) {
+        if (numMessages < 0)
+            return null;
+        if (numMessages == 0) {
+            String[]emptyArray = new String[numMessages];
+            return emptyArray;
+        }
+        String[] messagesArray = messages.toArray(new String[min(messages.size(), numMessages)]);
+        return messagesArray;
+    }
+
     public void put(String message) {
         if (messages.size() < size) {
             messages.add(addStamp(message));
@@ -32,7 +43,14 @@ public class CircularBuffer {
             counterString = "0" + counterString;
         }
         counter++;
-        return counterString + counter  + ") ";
+        return counterString + counter + ") ";
+    }
+
+    public int min(int a, int b) {
+        if (a < b) {
+            return a;
+        } else
+            return b;
     }
 
 }
