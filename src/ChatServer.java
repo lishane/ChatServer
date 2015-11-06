@@ -1,6 +1,6 @@
 import java.util.*;
-
-/**
+/*
+*
  * <b> CS 180 - Project 4 - Chat Server Skeleton </b>
  * <p>
  * <p>
@@ -9,17 +9,21 @@ import java.util.*;
  *
  * @author (Your Name) <(YourEmail@purdue.edu)>
  * @version (Today's Date)
- * @lab (Your Lab Section)
- */
+ * @lab (Your Lab Section)*/
+
+
 public class ChatServer {
 
     public ChatServer(User[] users, int maxMessages) {
         // TODO Complete the constructor
     }
+/*
 
-    /**
+*
      * This method begins server execution.
-     */
+*/
+
+
     public void run() {
         boolean verbose = false;
         System.out.printf("The VERBOSE option is off.\n\n");
@@ -64,7 +68,8 @@ public class ChatServer {
         in.close();
     }
 
-    /**
+/*
+*
      * Replaces "poorly formatted" escape characters with their proper values.
      * For some terminals, when escaped characters are entered, the terminal
      * includes the "\" as a character instead of entering the escape character.
@@ -73,7 +78,9 @@ public class ChatServer {
      *
      * @param str - the string to be edited
      * @return the properly escaped string
-     */
+
+*/
+
     private static String replaceEscapeChars(String str) {
         str = str.replace("\\r", "\r");
         str = str.replace("\\n", "\n");
@@ -82,13 +89,16 @@ public class ChatServer {
         return str;
     }
 
-    /**
+/*
+*
      * Determines which client command the request is using and calls the
      * function associated with that command.
      *
      * @param request - the full line of the client request (CRLF included)
      * @return the server response
-     */
+*/
+
+
     public String parseRequest(String request) {
         String[] req = request.split("\t");
         req[req.length - 1] = req[req.length - 1].substring(0, req[req.length - 1].length() - 2);
