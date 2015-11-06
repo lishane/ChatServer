@@ -105,6 +105,19 @@ public class ChatServer {
         return handleRequest(req);
     }
 
+    public boolean verifyCookie(SessionCookie cookie)
+    {
+        if(cookie == null)
+        {
+            return false;
+        }
+        if(cookie.hasTimedOut())
+        {
+            return false;
+        }
+        return true;
+    }
+
     public String handleRequest(String[] req) {
         //TODO check if request has end tag
         switch (req[0]) {
