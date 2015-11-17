@@ -1,3 +1,6 @@
+import sun.plugin2.message.Message;
+
+import java.lang.reflect.Array;
 import java.util.*;
 /*
 *
@@ -12,11 +15,20 @@ import java.util.*;
  * @lab (Your Lab Section)*/
 
 
-public class ChatServer {
+public class ChatServerTemp {
 
-    public ChatServer(User[] users, int maxMessages) {
-        // TODO Complete the constructor
+    ArrayList<User> users = new ArrayList<>();
+    CircularBuffer cb;
+    MessageFactory m = new MessageFactory();
+
+    public ChatServerTemp(User[] users, int maxMessages) {
+        this.users.add(new User("root", "cs180"));
+        for (int i = 0; i < users.length; i++) {
+            this.users.add(users[i]);
+        }
+        this.cb = new CircularBuffer(maxMessages);
     }
+
 /*
 
 *
@@ -100,44 +112,159 @@ public class ChatServer {
 
 
     public String parseRequest(String request) {
+        if (request.equals(null) || request.length() == 0 || !request.endsWith("\r\n")) {
+            return generateFailure(m.FORMAT_COMMAND_ERROR);
+        }
         String[] req = request.split("\t");
         req[req.length - 1] = req[req.length - 1].substring(0, req[req.length - 1].length() - 2);
         return handleRequest(req);
     }
 
-    public boolean verifyCookie(SessionCookie cookie)
-    {
-        if(cookie == null)
-        {
-            return false;
+    public boolean verifyCookie(long cookie) {
+        for (int i = 0; i < users.size(); i++) {
+            if (users.get(i).getCookie().getID() == cookie)
+                if (users.get(i).getCookie().hasTimedOut()) {
+                    users.get(i).setCookie(null);
+                    return false;
+                } else
+                    return true;
         }
-        if(cookie.hasTimedOut())
-        {
-            return false;
+        return false;
+    }
+
+    public String addUser(String[] args) {
+        for (int i = 0; i < args[2].length(); i++) {
+            if (Character.isLetterOrDigit(args[2].charAt(i)) == false) {
+                return MessageFactory.makeErrorMessage(24);
+            }
+
         }
-        return true;
+        if (args[2].length() > 20 && args[2].length() < 1) {
+            return MessageFactory.makeErrorMessage(24);
+        }
+        if (args[3].length() > 40 && args[3].length() < 1) {
+            return MessageFactory.makeErrorMessage(24);
+        }
+        User u = new User(args[2], args[3]);
+        u.getCookie().updateTimeOfActivity();
+        users.add(u);
+        return "SUCCESS\r\n";
+    }
+
+    public String userLogin(String[] args) {
+        boolean exists = false;
+        int index = -1;
+        for (int i = 0; i < users.size(); i++) {
+            String name = users.get(i).getName();
+            if (args[0].equals(name)) {
+                exists = true;
+                index = i;
+            }
+        }
+        // checks to see if 1) user isnt already authenticated 2) if the user is already created 3) password is correct
+        if (users.get(index).getCookie() != null || exists == false || users.get(index).checkPassword(args[1]) == false) {
+            return MessageFactory.makeErrorMessage(24);
+        } else {
+            SessionCookie s = new SessionCookie();
+            users.get(index).setCookie(s);
+            String paddedID = String.format("%04d", s.getID());
+            return "SUCCESS\t" + paddedID + "\r\n";
+        }
+    }
+
+    public String postMessage(String[] args, String name) {
+        String trimmed = args[2].trim();
+        if (trimmed.length() < 1) {
+            return MessageFactory.makeErrorMessage(24);
+        }
+        String result = args[1] + ": " + args[2];
+        cb.put(result);
+        int index = -1;
+        for (int i = 0; i < users.size(); i++) {
+            String name1 = users.get(i).getName();
+            if (name1.equals(name)) {
+                index = i;
+            }
+        }
+        users.get(index).getCookie().updateTimeOfActivity();
+        return "SUCCESS\r\n";
+    }
+
+    public String getMessages(String[] args) {
+        if (Integer.parseInt(args[2]) >= 1) {
+
+        }
+
+    }
+
+
+    public boolean isLoggedIn(long cookie) {
+        for (int i = 0; i < users.size(); i++) {
+            if (users.get(i).getCookie().getID() == cookie) {
+                return true;
+            } else
+                return false;
+        }
+        return false;
     }
 
     public String handleRequest(String[] req) {
-        //TODO check if request has end tag
         switch (req[0]) {
-            case "ADD-USER":
+            case "ADD-USER": // cookie, username, pass
                 if (req.length != 4)
-                    return //TODO return FAILURE;
-                if (//TODO check session cookie)
-                    return
+                    return generateFailure(m.FORMAT_COMMAND_ERROR);
+                if (!isLoggedIn(Long.parseLong(req[1])))
+                    return generateFailure(m.LOGIN_ERROR);
+                if (!verifyCookie(Long.parseLong(req[1])))
+                    return generateFailure(m.COOKIE_TIMEOUT_ERROR);
+                try {
+                    return addUser(req[2], req[3]);
+                } catch (Exception e) {
+                    System.out.println(m.makeErrorMessage(m.));
+                }
                 break;
-            case "USER-LOGIN":
-                break;
-            case "POST-MESSAGE":
-                break;
-            case "GET-MESSAGES":
+            case "USER-LOGIN": // username, password
+                if (req.length != 3)
+                    return generateFailure(m.FORMAT_COMMAND_ERROR);
+                return userLogin(req[1], req[2]);
+            break;
+            case "POST-MESSAGE": // cookie, message
+                if (req.length != 3)
+                    return generateFailure(m.FORMAT_COMMAND_ERROR);
+                if (!isLoggedIn(Long.parseLong(req[1])))
+                    return generateFailure(m.LOGIN_ERROR);
+                if (!verifyCookie(Long.parseLong(req[1])))
+                    return generateFailure(m.COOKIE_TIMEOUT_ERROR);
+                return postMessage(req[2]);
+            break;
+            case "GET-MESSAGES": //cookie numMessage
+                if (req.length != 4)
+                    return generateFailure(m.FORMAT_COMMAND_ERROR);
+                if (!isLoggedIn(Long.parseLong(req[1])))
+                    return generateFailure(m.LOGIN_ERROR);
+                if (!verifyCookie(Long.parseLong(req[1])))
+                    return generateFailure(m.COOKIE_TIMEOUT_ERROR);
+                try {
+                    return getMessages(Integer.parseInt(req[2]));
+                } catch (Exception e) {
+                    System.out.println(m.makeErrorMessage(m.));
+                }
                 break;
             default:
-                //TODO
-                break;
+                return generateFailure(m.UNKNOWN_COMMAND_ERROR);
+            break;
 
         }
         return request;
+
+    public String generateFailure(int code) {
+        return generateFailure(code, m.makeErrorMessage(code));
+    }
+
+    public String generateFailure(int code, String message) {
+        String s = "FAILURE\t" + code + "\t" + message + "\r\n";
+        return s;
     }
 }
+}
+
